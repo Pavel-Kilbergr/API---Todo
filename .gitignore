@@ -1,0 +1,21 @@
+# Build artifacts
+build/
+.gradle/
+gradle-wrapper.jar
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Python artifacts (můžeme smazat requirements.txt)
+requirements.txt
+__pycache__/
+*.pyc
