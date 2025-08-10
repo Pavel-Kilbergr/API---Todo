@@ -18,7 +18,7 @@ COPY src src/
 RUN ./gradlew build -x test --no-daemon
 
 # Production stage
-FROM openjdk:17-jre-slim
+FROM openjdk:17-jdk-slim
 
 # Set working directory
 WORKDIR /app
