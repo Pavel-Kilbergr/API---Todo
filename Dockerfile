@@ -8,6 +8,9 @@ WORKDIR /app
 COPY gradlew build.gradle settings.gradle ./
 COPY gradle gradle/
 
+# Nastavit spouštěcí práva pro gradlew
+RUN chmod +x gradlew
+
 # Zkopírovat zdrojové kódy
 COPY src src/
 
