@@ -1,33 +1,14 @@
-# Multi-stage build for Spring Boot application
-FROM openjdk:17-jdk-slim AS builder
-
-# Set working directory
-WORKDIR /app
-
-# Copy Gradle wrapper and build files
-COPY gradlew build.gradle settings.gradle ./
-COPY gradle gradle/
-
-# Make gradlew executable
-RUN chmod +x gradlew
-
-# Copy source code
-COPY src src/
-
-# Build the application
-RUN ./gradlew build -x test --no-daemon
-
-# Production stage
+# Simple single-stage build for Render
 FROM openjdk:17-jdk-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy the built jar from builder stage
-COPY --from=builder /app/build/libs/todo-api-0.0.1-SNAPSHOT.jar app.jar
+# Copy everything
+COPY . .
 
-# Expose port
+# Build in one step
+RUN chmod +x gradlew && ./gradlew build -x test --no-daemon
+
 EXPOSE 8080
 
-# Run the application
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "build/libs/todo-api-0.0.1-SNAPSHOT.jar"]
