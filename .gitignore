@@ -5,6 +5,9 @@ build/resources/
 build/tmp/
 .gradle/
 
+# Allow JAR files in build/libs
+!build/libs/
+
 # IDE files
 .idea/
 .vscode/
