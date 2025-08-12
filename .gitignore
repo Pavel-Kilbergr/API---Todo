@@ -1,7 +1,9 @@
-# Build artifacts
-build/
+# Build artifacts (except final JAR)
+build/classes/
+build/generated/
+build/resources/
+build/tmp/
 .gradle/
-gradle-wrapper.jar
 
 # IDE files
 .idea/
