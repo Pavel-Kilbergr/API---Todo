@@ -13,22 +13,28 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * REST Controller for Todo API
- * Provides CRUD operations via HTTP endpoints
+ * REST Controller providing HTTP endpoints for Todo API operations
+ * Implements full CRUD functionality with additional features like search and statistics
+ * Supports JSON request/response format with proper HTTP status codes
  * 
  * @author Pavel
+ * @since 1.0
  */
 @RestController
 @RequestMapping("/api/todos")
-@CrossOrigin(origins = "*") // Allow all origins for testing
+@CrossOrigin(origins = "*") // Allow all origins for development/testing
 public class TodoController {
 
+    /** Dependency injection of TodoRepository for data access operations */
     @Autowired
     private TodoRepository todoRepository;
 
     /**
-     * Get API info and statistics
-     * GET /api/todos/info
+     * Provides API information and statistics
+     * Returns comprehensive metadata about the API including usage statistics
+     * 
+     * @return ResponseEntity containing API info and current statistics
+     * @apiNote GET /api/todos/info
      */
     @GetMapping("/info")
     public ResponseEntity<Map<String, Object>> getInfo() {
