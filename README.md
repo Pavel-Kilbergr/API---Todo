@@ -3,6 +3,7 @@
 ## 🎯 **PROJEKT HISTORIE A VÝVOJ**
 
 ### **Fáze 1: Základní Todo API** ✅ (Dokončeno)
+
 - **Technologie:** Java 17, Spring Boot 3.4.1, Gradle, H2 databáze
 - **Funkcionalita:** Kompletní CRUD operace pro Todo items
 - **Deployment:** Úspěšně nasazeno na Render.com
@@ -10,6 +11,7 @@
 - **8 REST Endpointů:** GET, POST, PUT, DELETE, search, completed, pending, info
 
 ### **Fáze 2: Book ID Checker Enhancement** 🚧 (Aktuální)
+
 - **Cíl:** Integrace s externí Book API
 - **Funkcionalita:** Automatické nahrazení ID čísel informacemi o knihách
 - **Trigger:** Title = "BOOK_CHECKER" + Description = číslo
@@ -18,6 +20,7 @@
 - **Status:** BookService implementován, čeká na controller integration
 
 ### **Fáze 3: Code Quality & Documentation** ✅ (Dokončeno)
+
 - **Professional Comments:** Všechny třídy mají anglické JavaDoc komentáře
 - **Code Standards:** Dodržení enterprise coding standards
 - **Documentation:** Kompletní @param, @return, @author, @since tags
@@ -26,6 +29,7 @@
 ## 📁 **STRUKTURA PROJEKTU**
 
 ### **Java Classes:**
+
 - `TodoApiApplication.java` - Main Spring Boot aplikace
 - `Todo.java` - JPA entita s atributy (id, title, description, completed, timestamps)
 - `TodoRepository.java` - Spring Data JPA interface s custom queries
@@ -33,6 +37,7 @@
 - `DataInitializer.java` - Automatické vytvoření vzorových dat
 
 ### **Konfigurace:**
+
 - `application.properties` - H2 databáze, port nastavení, logging
 - `build.gradle` - Závislosti, Java 17, Spring Boot plugins
 - `Dockerfile` - Single-stage build pro cloud deployment
@@ -40,6 +45,7 @@
 ## 🛠️ **TECHNICKÁ SPECIFIKACE**
 
 ### **REST API Endpointy:**
+
 ```
 GET    /api/todos           - Všechny todos
 GET    /api/todos/{id}      - Todo podle ID
@@ -53,6 +59,7 @@ GET    /api/todos/info      - API informace a statistiky
 ```
 
 ### **Book Checker Logic:**
+
 ```
 IF title == "BOOK_CHECKER" AND description == integer:
   1. Zavolej GET https://simple-books-api.glitch.me/books/{id}
@@ -66,6 +73,7 @@ ELSE:
 ## 🎓 **LEARNING OBJECTIVES (Výukové cíle)**
 
 ### **Dokončené:**
+
 - ✅ Spring Boot projekt struktura
 - ✅ JPA entity a repository pattern
 - ✅ REST API design a implementace
@@ -78,6 +86,7 @@ ELSE:
 - ✅ Comprehensive JavaDoc comments
 
 ### **Aktuální (Book Checker):**
+
 - 🔄 HTTP Client integration (RestTemplate/WebClient)
 - 🔄 External API consumption
 - 🔄 Conditional business logic
@@ -88,11 +97,13 @@ ELSE:
 ## 👥 **TEAM COLLABORATION**
 
 ### **Role:**
+
 - **Pavel:** Developer, project owner
 - **Kolega:** Stakeholder, feature requester, tester
 - **AI Agent:** Mentor, code reviewer, teacher
 
 ### **Komunikační strategie:**
+
 - Strukturované vysvětlování po malých částech
 - Komprehension testy mezi sekcemi
 - Motivační a empatický přístup k učení
@@ -101,12 +112,14 @@ ELSE:
 ## 🚀 **DEPLOYMENT INFO**
 
 ### **Live Environment:**
+
 - **URL:** https://api-todo-44sn.onrender.com
 - **Platform:** Render.com
 - **Build:** Automatic deployment from GitHub main branch
 - **Database:** H2 in-memory (resets on deployment)
 
 ### **Local Development:**
+
 ```bash
 ./gradlew bootRun
 # API dostupné na http://localhost:8080
@@ -116,6 +129,7 @@ ELSE:
 ## 📞 **AGENT INSTRUCTIONS**
 
 ### **Teaching Style:**
+
 - Vysvětluj PROČ před WHAT
 - Používej humor a empatie
 - Testuj porozumění before moving forward
@@ -123,10 +137,12 @@ ELSE:
 - Rozbij komplexní úkoly na malé kroky
 
 ### **Code Style:**
+
 - Vždy ukáže context před editací
 - Vysvětli změny step-by-step
 - Include error handling considerations
 - Test changes immediately after implementation
 
 ---
-*Posledně aktualizováno: 13. srpna 2025*
+
+_Posledně aktualizováno: 13. srpna 2025_

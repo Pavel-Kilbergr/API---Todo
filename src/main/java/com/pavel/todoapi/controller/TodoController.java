@@ -2,6 +2,7 @@ package com.pavel.todoapi.controller;
 
 import com.pavel.todoapi.entity.Todo;
 import com.pavel.todoapi.repository.TodoRepository;
+import com.pavel.todoapi.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,10 @@ public class TodoController {
     /** Dependency injection of TodoRepository for data access operations */
     @Autowired
     private TodoRepository todoRepository;
+    
+    /** Dependency injection of BookService for external Book API integration */
+    @Autowired
+    private BookService bookService;
 
     /**
      * Provides API information and statistics
@@ -81,17 +86,61 @@ public class TodoController {
     }
 
     /**
-     * Create new todo
-     * POST /api/todos
+     * Creates a new todo with optional Book Checker functionality
+     * If title is "BOOK_CHECKER" and description is integer, fetches book info from external API
+     * 
+     * @param todo the todo object to create
+     * @return ResponseEntity with created todo or error status
+     * @apiNote POST /api/todos
      */
     @PostMapping
     public ResponseEntity<Todo> createTodo(@RequestBody Todo todo) {
         try {
+            // Check if this is a Book Checker request
+            if ("BOOK_CHECKER".equals(todo.getTitle()) && todo.getDescription() != null) {
+                String bookInfo = processBookChecker(todo.getDescription());
+                if (bookInfo != null) {
+                    // Replace description with book information
+                    todo.setDescription(bookInfo);
+                }
+                // If bookInfo is null, keep original description as fallback
+            }
+            
             Todo savedTodo = todoRepository.save(todo);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedTodo);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+    
+    /**
+     * Processes Book Checker logic - attempts to parse ID and fetch book information
+     * 
+     * @param description the description field containing potential book ID
+     * @return formatted book info "title / author" or null if processing fails
+     */
+    private String processBookChecker(String description) {
+        try {
+            // Try to parse description as integer (book ID)
+            int bookId = Integer.parseInt(description.trim());
+            
+            // Call external Book API via BookService
+            String bookInfo = bookService.getBookInfo(bookId);
+            
+            if (bookInfo != null) {
+                System.out.println("✅ Book Checker success: " + bookInfo);
+                return bookInfo;
+            } else {
+                System.out.println("⚠️ Book Checker failed: No book data returned");
+            }
+            
+        } catch (NumberFormatException e) {
+            System.out.println("⚠️ Book Checker failed: Description is not a valid integer");
+        } catch (Exception e) {
+            System.out.println("⚠️ Book Checker failed: " + e.getMessage());
+        }
+        
+        return null; // Fallback - keep original description
     }
 
     /**
