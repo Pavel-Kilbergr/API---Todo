@@ -1,3 +1,8 @@
+package com.pavel.todoapi;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 /**
  * Main Spring Boot application class for Todo REST API
  * Entry point that bootstraps the entire application with auto-configuration
