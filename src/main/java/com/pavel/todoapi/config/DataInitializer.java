@@ -25,12 +25,24 @@ public class DataInitializer implements CommandLineRunner {
      * Executes after Spring Boot application startup
      * Creates sample todo data for development and testing
      * 
+     * ⚠️ WARNING: PŘED MIGRATION NA POSTGRESQL/MYSQL - UPRAVIT TENTO KÓD!
+     * 
+     * Aktuální chování:
+     * - deleteAll() smaže VŠE při každém restartu (OK pro H2 in-memory)
+     * - Vytvoří 5 nových todos (duplicity s persistent DB)
+     * 
+     * Řešení pro PostgreSQL:
+     * if (todoRepository.count() == 0) { 
+     *     // vytvoř sample data pouze pokud je DB prázdná
+     * }
+     * 
      * @param args command line arguments (not used)
      * @throws Exception if data initialization fails
      */
     @Override
     public void run(String... args) throws Exception {
         // Clear existing data to ensure clean state on restart
+        // ⚠️ POZOR: Toto smaže VŠE při přechodu na PostgreSQL!
         todoRepository.deleteAll();
         
         // Create sample todos for development/testing
