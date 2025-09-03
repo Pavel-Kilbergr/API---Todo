@@ -126,6 +126,63 @@ ELSE:
 # H2 Console: http://localhost:8080/h2-console
 ```
 
+## 💻 **SETUP PRO PRÁCI (Windows PC)**
+
+### **Požadavky pro development:**
+
+#### **1️⃣ Java Development Kit (JDK 17)**
+
+**Doporučený postup - Chocolatey:**
+```cmd
+# 1. Nainstaluj Chocolatey (PowerShell jako Admin):
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# 2. Nainstaluj JDK 17:
+choco install openjdk17
+```
+
+**Alternativní postup - Ruční instalace:**
+1. Stáhni z: https://adoptium.net/temurin/releases/
+2. Vyber **JDK 17**, **Windows x64**, **.msi installer**
+3. Spusť installer a postupuj podle instrukcí
+
+#### **2️⃣ VS Code Extensions**
+
+**Nainstaluj tyto extension packs:**
+- `Extension Pack for Java` (vscjava.vscode-java-pack)
+- `Spring Boot Extension Pack` (vmware.vscode-boot-dev-pack)
+
+#### **3️⃣ Git pro Windows**
+```cmd
+# Přes Chocolatey:
+choco install git
+
+# Nebo stáhni z: https://git-scm.com/download/win
+```
+
+### **Klonování a spuštění projektu:**
+
+```cmd
+# 1. Naklonuj projekt:
+git clone https://github.com/Pavel-Kilbergr/API---Todo.git
+cd API---Todo
+
+# 2. Ověř instalaci:
+java --version
+javac --version
+git --version
+
+# 3. Spusť projekt:
+./gradlew bootRun
+```
+
+### **Testování:**
+- API: http://localhost:8080/api/todos
+- H2 Console: http://localhost:8080/h2-console
+- VS Code automaticky detekuje Java projekt a poskytne IntelliSense
+
+**Po tomto setupu můžeš pokračovat ve studiu Java Spring Boot konceptů! 🚀**
+
 ## 📞 **AGENT INSTRUCTIONS**
 
 ### **Teaching Style:**
@@ -145,4 +202,4 @@ ELSE:
 
 ---
 
-_Posledně aktualizováno: 13. srpna 2025_
+_Posledně aktualizováno: 22. srpna 2025_
