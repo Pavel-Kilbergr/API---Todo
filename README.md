@@ -10,16 +10,24 @@
 - **Live API:** https://api-todo-44sn.onrender.com
 - **8 REST Endpointů:** GET, POST, PUT, DELETE, search, completed, pending, info
 
-### **Fáze 2: Book ID Checker Enhancement** 🚧 (Aktuální)
+### **Fáze 2: PostgreSQL Migration** 🔄 (Dokončeno s problémy)
+
+- **Cíl:** Migrace z H2 in-memory na PostgreSQL cloud database
+- **Cloud Provider:** Supabase (https://supabase.com)
+- **Konfigurace:** Kompletně dokončena, včetně HikariCP connection pooling
+- **Security:** Environment variables pattern pro credential management
+- **Status:** ❌ Blokováno authentication failure - potřeba password reset
+
+### **Fáze 3: Book ID Checker Enhancement** ⏸️ (Pozastaveno)
 
 - **Cíl:** Integrace s externí Book API
 - **Funkcionalita:** Automatické nahrazení ID čísel informacemi o knihách
 - **Trigger:** Title = "BOOK_CHECKER" + Description = číslo
 - **Externí API:** https://simple-books-api.glitch.me/books/:id
 - **Výstup:** "Název knihy / Autor" místo pouhého ID
-- **Status:** BookService implementován, čeká na controller integration
+- **Status:** BookService implementován, čeká na dokončení database migration
 
-### **Fáze 3: Code Quality & Documentation** ✅ (Dokončeno)
+### **Fáze 4: Code Quality & Documentation** ✅ (Dokončeno)
 
 - **Professional Comments:** Všechny třídy mají anglické JavaDoc komentáře
 - **Code Standards:** Dodržení enterprise coding standards
@@ -38,9 +46,10 @@
 
 ### **Konfigurace:**
 
-- `application.properties` - H2 databáze, port nastavení, logging
-- `build.gradle` - Závislosti, Java 17, Spring Boot plugins
+- `application.properties` - ✅ Migrováno na PostgreSQL/Supabase s HikariCP connection pooling
+- `build.gradle` - ✅ Aktualizováno s PostgreSQL dependency, Java 17, Spring Boot plugins
 - `Dockerfile` - Single-stage build pro cloud deployment
+- `DataInitializer.java` - ✅ Upraven pro produkční prostředí (bez automatických vzorových dat)
 
 ## 🛠️ **TECHNICKÁ SPECIFIKACE**
 
@@ -77,7 +86,11 @@ ELSE:
 - ✅ Spring Boot projekt struktura
 - ✅ JPA entity a repository pattern
 - ✅ REST API design a implementace
-- ✅ H2 databáze konfigurace
+- ✅ H2 databáze konfigurace (deprecated)
+- ✅ PostgreSQL cloud database setup (Supabase)
+- ✅ HikariCP connection pooling
+- ✅ Environment variable security patterns
+- ✅ Production-ready configuration
 - ✅ Gradle build system
 - ✅ Docker deployment
 - ✅ Git workflow a GitHub integration
@@ -85,14 +98,25 @@ ELSE:
 - ✅ Enterprise coding standards
 - ✅ Comprehensive JavaDoc comments
 
-### **Aktuální (Book Checker):**
+### **Problémové oblasti (troubleshooting experience):**
 
-- 🔄 HTTP Client integration (RestTemplate/WebClient)
-- 🔄 External API consumption
-- 🔄 Conditional business logic
-- 🔄 Error handling a fallback strategies
-- 🔄 JSON parsing a data transformation
-- 🔄 Integration testing
+- 🔧 Database credential management challenges
+- 🔧 Cloud database password expiration handling
+- 🔧 PostgreSQL authentication troubleshooting
+
+### **Aktuální (na zítra po reset hesla):**
+
+- 🔄 Database connection testing a verification
+- 🔄 Production deployment s PostgreSQL
+
+### **Budoucí (Book Checker):**
+
+- � HTTP Client integration (RestTemplate/WebClient)
+- � External API consumption
+- � Conditional business logic
+- � Error handling a fallback strategies
+- � JSON parsing a data transformation
+- � Integration testing
 
 ## 👥 **TEAM COLLABORATION**
 
@@ -111,20 +135,30 @@ ELSE:
 
 ## 🚀 **DEPLOYMENT INFO**
 
-### **Live Environment:**
+### **Development Environment:**
+
+- **Database:** PostgreSQL na Supabase cloud
+- **Connection:** jdbc:postgresql://db.ieesukcrbwebduaqupzv.supabase.co:5432/postgres
+- **Status:** ❌ Authentication failure - potřeba password reset
+
+### **Local Development (po vyřešení database problému):**
+
+```bash
+# Nastav database password
+export DATABASE_PASSWORD='tvoje-heslo-ze-supabase'
+
+# Spusť aplikaci
+./gradlew bootRun
+
+# API dostupné na http://localhost:8080
+```
+
+### **Live Environment (Legacy - H2):**
 
 - **URL:** https://api-todo-44sn.onrender.com
 - **Platform:** Render.com
 - **Build:** Automatic deployment from GitHub main branch
-- **Database:** H2 in-memory (resets on deployment)
-
-### **Local Development:**
-
-```bash
-./gradlew bootRun
-# API dostupné na http://localhost:8080
-# H2 Console: http://localhost:8080/h2-console
-```
+- **Database:** H2 in-memory (deprecated, bude nahrazeno PostgreSQL)
 
 ## 💻 **SETUP PRO PRÁCI (Windows PC)**
 
@@ -202,46 +236,50 @@ git --version
 
 ---
 
-_Posledně aktualizováno: 4. září 2025_
+_Posledně aktualizováno: 5. září 2025 - PostgreSQL migration dokončena s authentication issues_
 
 ---
 
-## 🐘 **POSTGRESQL MIGRATION GUIDE** 
+## 🐘 **POSTGRESQL MIGRATION - COMPLETED WITH ISSUES** 
 
-### **🎯 Plán na večer - PostgreSQL migrace (15-25 minut):**
+### **✅ Dokončené kroky:**
 
-#### **Krok 1: Supabase Setup (5 minut)**
-1. **Registrace:** https://supabase.com
-2. **Sign up** s GitHub účtem (máš ho)
-3. **Create New Project:**
-   - Name: `todo-api-db`
-   - Password: **SILNÉ HESLO** (zapamatuj si!)
-   - Region: `West EU` (nejblíž k Čechám)
-4. **Zkopíruj connection string** z Settings → Database
+#### **✅ Krok 1: Supabase Setup**
+- **Projekt vytvořen:** https://supabase.com
+- **Database Host:** db.ieesukcrbwebduaqupzv.supabase.co:5432
+- **Username:** postgres
+- **Database Name:** postgres
+- **Status:** ✅ CONFIGURED
 
-#### **Krok 2: Spring Boot Changes (10 minut)**
+#### **✅ Krok 2: Spring Boot Changes**
 
-**A) Přidat PostgreSQL dependency do `build.gradle`:**
+**A) PostgreSQL dependency přidána do `build.gradle`:**
 ```gradle
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.postgresql:postgresql'  // <-- PŘIDAT
+    implementation 'org.postgresql:postgresql'  // ✅ PŘIDÁNO
     runtimeOnly 'com.h2database:h2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 ```
 
-**B) Změnit `application.properties` (nahradit H2 config):**
+**B) `application.properties` kompletně migrováno:**
 ```properties
 # === POSTGRESQL CONFIGURATION ===
-spring.datasource.url=jdbc:postgresql://db.xyz.supabase.co:5432/postgres
+spring.datasource.url=jdbc:postgresql://db.ieesukcrbwebduaqupzv.supabase.co:5432/postgres
 spring.datasource.username=postgres
-spring.datasource.password=TVOJE-HESLO
+spring.datasource.password=${DATABASE_PASSWORD}
 spring.datasource.driver-class-name=org.postgresql.Driver
+
+# === HIKARI CONNECTION POOL ===
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.connection-timeout=20000
+spring.datasource.hikari.idle-timeout=300000
+spring.datasource.hikari.max-lifetime=1200000
 
 # === JPA/HIBERNATE SETTINGS ===
 spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
@@ -254,42 +292,77 @@ server.port=8080
 logging.level.com.pavel.todoapi=DEBUG
 ```
 
-#### **Krok 3: DataInitializer Update (2 minuty)**
-⚠️ **POZOR:** Odkomentuj warning v `DataInitializer.java` - `deleteAll()` v produkci!
+#### **✅ Krok 3: DataInitializer Update**
+- **Status:** ✅ DOKONČENO
+- **Změny:** Vypnut `deleteAll()` pro produkci
+- **Funkčnost:** Pouze počítá existující záznamy, nevytváří vzorová data
 
-#### **Krok 4: Testing & Deploy (5 minut)**
-1. **Gradle build:** `./gradlew build`
-2. **Run locally:** `./gradlew bootRun`
-3. **Test API:** http://localhost:8080/api/todos/info
-4. **Supabase Dashboard:** Zkontroluj tabulky v Table Editor
+### **❌ SOUČASNÝ PROBLÉM: Database Authentication**
 
-#### **Krok 5: Git Commit**
+#### **🚨 Chyba:**
+```
+FATAL: password authentication failed for user "postgres"
+```
+
+#### **📋 Diagnostika:**
+1. **Environment Variable:** ✅ Správně nastavena
+2. **Connection String:** ✅ Správná konfigurace
+3. **Username:** ✅ postgres
+4. **Database:** ✅ postgres
+5. **Password:** ❌ NEPLATNÉ - možná expirované nebo resetované
+
+### **🔧 ŘEŠENÍ PRO ZÍTRA:**
+
+#### **Krok 1: Reset Database Password v Supabase**
+1. Přihlas se na https://supabase.com
+2. Jdi na svůj projekt
+3. **Settings** → **Database**
+4. **Reset database password**
+5. **Vygeneruj nové heslo** a ulož si ho
+
+#### **Krok 2: Aktualizace Environment Variable**
 ```bash
-git add .
-git commit -m "🐘 Migrate from H2 to PostgreSQL via Supabase
+# Nastav nové heslo
+export DATABASE_PASSWORD='nove-heslo-ze-supabase'
 
-- Add PostgreSQL dependency
-- Update application.properties with Supabase config
-- Switch from H2 in-memory to persistent PostgreSQL
-- Maintain existing API functionality
-- Ready for production deployment"
-git push origin main
+# Test pripojeni
+./gradlew bootRun
+```
+
+#### **Krok 3: Verify Everything Works**
+```bash
+# Zkontroluj API
+curl http://localhost:8080/api/todos/info
+
+# Zkontroluj databazi v Supabase dashboardu
 ```
 
 ### **🔒 Security Notes:**
-- ✅ **Free tier:** 500MB database, unlimited API requests
-- ✅ **SSL encryption** automaticky
-- ⚠️ **Credentials:** Nikdy nedávej hesla do GitHubu!
-- 💡 **Later:** Environment variables pro produkci
+- ✅ **Environment Variables:** Používáme `${DATABASE_PASSWORD}` pattern
+- ✅ **No Hardcoded Passwords:** Žádná hesla v kódu
+- ✅ **SSL Encryption:** Automaticky přes Supabase
+- ⚠️ **Password Reset:** Pravděpodobně nutné každý týden
 
-### **🎯 Co získáš:**
-- 🐘 **Profesionální PostgreSQL** místo H2
-- ☁️ **Cloud database** - přístup odkudkoliv
-- 📊 **Supabase Dashboard** - grafické rozhraní
-- 🔄 **Persistent data** - přežije restarty
-- 🚀 **Production-ready** setup
+### **📊 Migration Status:**
+- **Konfigurační soubory:** ✅ 100% dokončeno
+- **Dependencies:** ✅ 100% dokončeno  
+- **Code Changes:** ✅ 100% dokončeno
+- **Database Connection:** ❌ Blokováno neplatným heslem
+- **Production Ready:** 🔄 Pending password reset
 
-### **📞 Support:**
-Pokud něco nefunguje, napiš a projdeme to step-by-step! 💪
+### **📞 Next Steps:**
+1. **Password reset** v Supabase dashboard
+2. **Test connection** s novým heslem
+3. **Deploy to production** když vše funguje
+
+---
+
+### **🎓 Co se naučilo:**
+- ✅ PostgreSQL dependency management
+- ✅ HikariCP connection pooling
+- ✅ Environment variable security patterns
+- ✅ Supabase cloud database setup
+- ✅ Production-ready configuration
+- 📝 Database credential management challenges
 
 ---
