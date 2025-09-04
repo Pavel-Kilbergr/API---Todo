@@ -202,4 +202,94 @@ git --version
 
 ---
 
-_Posledně aktualizováno: 22. srpna 2025_
+_Posledně aktualizováno: 4. září 2025_
+
+---
+
+## 🐘 **POSTGRESQL MIGRATION GUIDE** 
+
+### **🎯 Plán na večer - PostgreSQL migrace (15-25 minut):**
+
+#### **Krok 1: Supabase Setup (5 minut)**
+1. **Registrace:** https://supabase.com
+2. **Sign up** s GitHub účtem (máš ho)
+3. **Create New Project:**
+   - Name: `todo-api-db`
+   - Password: **SILNÉ HESLO** (zapamatuj si!)
+   - Region: `West EU` (nejblíž k Čechám)
+4. **Zkopíruj connection string** z Settings → Database
+
+#### **Krok 2: Spring Boot Changes (10 minut)**
+
+**A) Přidat PostgreSQL dependency do `build.gradle`:**
+```gradle
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.postgresql:postgresql'  // <-- PŘIDAT
+    runtimeOnly 'com.h2database:h2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+```
+
+**B) Změnit `application.properties` (nahradit H2 config):**
+```properties
+# === POSTGRESQL CONFIGURATION ===
+spring.datasource.url=jdbc:postgresql://db.xyz.supabase.co:5432/postgres
+spring.datasource.username=postgres
+spring.datasource.password=TVOJE-HESLO
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# === JPA/HIBERNATE SETTINGS ===
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# === SERVER CONFIGURATION ===
+server.port=8080
+logging.level.com.pavel.todoapi=DEBUG
+```
+
+#### **Krok 3: DataInitializer Update (2 minuty)**
+⚠️ **POZOR:** Odkomentuj warning v `DataInitializer.java` - `deleteAll()` v produkci!
+
+#### **Krok 4: Testing & Deploy (5 minut)**
+1. **Gradle build:** `./gradlew build`
+2. **Run locally:** `./gradlew bootRun`
+3. **Test API:** http://localhost:8080/api/todos/info
+4. **Supabase Dashboard:** Zkontroluj tabulky v Table Editor
+
+#### **Krok 5: Git Commit**
+```bash
+git add .
+git commit -m "🐘 Migrate from H2 to PostgreSQL via Supabase
+
+- Add PostgreSQL dependency
+- Update application.properties with Supabase config
+- Switch from H2 in-memory to persistent PostgreSQL
+- Maintain existing API functionality
+- Ready for production deployment"
+git push origin main
+```
+
+### **🔒 Security Notes:**
+- ✅ **Free tier:** 500MB database, unlimited API requests
+- ✅ **SSL encryption** automaticky
+- ⚠️ **Credentials:** Nikdy nedávej hesla do GitHubu!
+- 💡 **Later:** Environment variables pro produkci
+
+### **🎯 Co získáš:**
+- 🐘 **Profesionální PostgreSQL** místo H2
+- ☁️ **Cloud database** - přístup odkudkoliv
+- 📊 **Supabase Dashboard** - grafické rozhraní
+- 🔄 **Persistent data** - přežije restarty
+- 🚀 **Production-ready** setup
+
+### **📞 Support:**
+Pokud něco nefunguje, napiš a projdeme to step-by-step! 💪
+
+---
