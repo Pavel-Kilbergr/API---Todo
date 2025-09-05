@@ -1,17 +1,20 @@
 package com.pavel.todoapi.controller;
 
 import com.pavel.todoapi.entity.Todo;
+import com.pavel.todoapi.exception.TodoNotFoundException;
 import com.pavel.todoapi.repository.TodoRepository;
 import com.pavel.todoapi.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * REST Controller providing HTTP endpoints for Todo API operations
@@ -24,6 +27,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/todos")
 @CrossOrigin(origins = "*") // Allow all origins for development/testing
+@Validated
 public class TodoController {
 
     /** Dependency injection of TodoRepository for data access operations */
@@ -75,42 +79,43 @@ public class TodoController {
     }
 
     /**
-     * Get todo by ID
-     * GET /api/todos/{id}
+     * Get todo by ID with proper exception handling
+     * Throws TodoNotFoundException if todo doesn't exist
+     * 
+     * @param id the todo ID to retrieve
+     * @return ResponseEntity with the found todo
+     * @throws TodoNotFoundException if todo with given ID doesn't exist
+     * @apiNote GET /api/todos/{id}
      */
     @GetMapping("/{id}")
     public ResponseEntity<Todo> getTodoById(@PathVariable Long id) {
-        Optional<Todo> todo = todoRepository.findById(id);
-        return todo.map(ResponseEntity::ok)
-                  .orElse(ResponseEntity.notFound().build());
+        Todo todo = todoRepository.findById(id)
+                .orElseThrow(() -> new TodoNotFoundException(id));
+        return ResponseEntity.ok(todo);
     }
 
     /**
-     * Creates a new todo with optional Book Checker functionality
+     * Creates a new todo with validation and optional Book Checker functionality
      * If title is "BOOK_CHECKER" and description is integer, fetches book info from external API
      * 
-     * @param todo the todo object to create
-     * @return ResponseEntity with created todo or error status
+     * @param todo the todo object to create (must be valid)
+     * @return ResponseEntity with created todo
      * @apiNote POST /api/todos
      */
     @PostMapping
-    public ResponseEntity<Todo> createTodo(@RequestBody Todo todo) {
-        try {
-            // Check if this is a Book Checker request
-            if ("BOOK_CHECKER".equals(todo.getTitle()) && todo.getDescription() != null) {
-                String bookInfo = processBookChecker(todo.getDescription());
-                if (bookInfo != null) {
-                    // Replace description with book information
-                    todo.setDescription(bookInfo);
-                }
-                // If bookInfo is null, keep original description as fallback
+    public ResponseEntity<Todo> createTodo(@Valid @RequestBody Todo todo) {
+        // Check if this is a Book Checker request
+        if ("BOOK_CHECKER".equals(todo.getTitle()) && todo.getDescription() != null) {
+            String bookInfo = processBookChecker(todo.getDescription());
+            if (bookInfo != null) {
+                // Replace description with book information
+                todo.setDescription(bookInfo);
             }
-            
-            Todo savedTodo = todoRepository.save(todo);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedTodo);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            // If bookInfo is null, keep original description as fallback
         }
+        
+        Todo savedTodo = todoRepository.save(todo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedTodo);
     }
     
     /**
@@ -144,41 +149,47 @@ public class TodoController {
     }
 
     /**
-     * Update existing todo
-     * PUT /api/todos/{id}
+     * Update existing todo with validation and exception handling
+     * 
+     * @param id the ID of the todo to update
+     * @param todoDetails the updated todo data (must be valid)
+     * @return ResponseEntity with updated todo
+     * @throws TodoNotFoundException if todo with given ID doesn't exist
+     * @apiNote PUT /api/todos/{id}
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Todo> updateTodo(@PathVariable Long id, @RequestBody Todo todoDetails) {
-        Optional<Todo> optionalTodo = todoRepository.findById(id);
+    public ResponseEntity<Todo> updateTodo(@PathVariable Long id, @Valid @RequestBody Todo todoDetails) {
+        Todo todo = todoRepository.findById(id)
+                .orElseThrow(() -> new TodoNotFoundException(id));
         
-        if (optionalTodo.isPresent()) {
-            Todo todo = optionalTodo.get();
-            todo.setTitle(todoDetails.getTitle());
-            todo.setDescription(todoDetails.getDescription());
-            todo.setCompleted(todoDetails.getCompleted());
-            
-            Todo updatedTodo = todoRepository.save(todo);
-            return ResponseEntity.ok(updatedTodo);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        // Update fields
+        todo.setTitle(todoDetails.getTitle());
+        todo.setDescription(todoDetails.getDescription());
+        todo.setCompleted(todoDetails.getCompleted());
+        
+        Todo updatedTodo = todoRepository.save(todo);
+        return ResponseEntity.ok(updatedTodo);
     }
 
     /**
-     * Delete todo
-     * DELETE /api/todos/{id}
+     * Delete todo with proper exception handling
+     * 
+     * @param id the ID of the todo to delete
+     * @return ResponseEntity with success message
+     * @throws TodoNotFoundException if todo with given ID doesn't exist
+     * @apiNote DELETE /api/todos/{id}
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deleteTodo(@PathVariable Long id) {
-        if (todoRepository.existsById(id)) {
-            todoRepository.deleteById(id);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Todo deleted successfully");
-            response.put("id", id.toString());
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.notFound().build();
+        if (!todoRepository.existsById(id)) {
+            throw new TodoNotFoundException(id);
         }
+        
+        todoRepository.deleteById(id);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Todo deleted successfully");
+        response.put("id", id.toString());
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -202,12 +213,16 @@ public class TodoController {
     }
 
     /**
-     * Search todos by title
-     * GET /api/todos/search?title=...
+     * Search todos by title with validation
+     * 
+     * @param title the title to search for (required, non-blank)
+     * @return ResponseEntity with matching todos
+     * @apiNote GET /api/todos/search?title=...
      */
     @GetMapping("/search")
-    public ResponseEntity<List<Todo>> searchTodos(@RequestParam String title) {
-        List<Todo> todos = todoRepository.findByTitleContainingIgnoreCase(title);
+    public ResponseEntity<List<Todo>> searchTodos(
+            @RequestParam @NotBlank(message = "Search title cannot be blank") String title) {
+        List<Todo> todos = todoRepository.findByTitleContainingIgnoreCase(title.trim());
         return ResponseEntity.ok(todos);
     }
 }

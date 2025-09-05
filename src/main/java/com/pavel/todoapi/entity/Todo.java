@@ -1,6 +1,9 @@
 package com.pavel.todoapi.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 /**
@@ -20,14 +23,18 @@ public class Todo {
     private Long id;
     
     /** Todo title - required field with max 100 characters */
+    @NotBlank(message = "Title is required and cannot be blank")
+    @Size(min = 1, max = 100, message = "Title must be between 1 and 100 characters")
     @Column(nullable = false, length = 100)
     private String title;
     
     /** Todo description - optional field with max 500 characters */
+    @Size(max = 500, message = "Description cannot exceed 500 characters")
     @Column(length = 500)
     private String description;
     
     /** Completion status - defaults to false (pending) */
+    @NotNull(message = "Completed status is required")
     @Column(nullable = false)
     private Boolean completed = false;
     
