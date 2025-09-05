@@ -357,12 +357,131 @@ curl http://localhost:8080/api/todos/info
 
 ---
 
-### **🎓 Co se naučilo:**
-- ✅ PostgreSQL dependency management
-- ✅ HikariCP connection pooling
-- ✅ Environment variable security patterns
-- ✅ Supabase cloud database setup
-- ✅ Production-ready configuration
-- 📝 Database credential management challenges
+---
+
+## 🛡️ **SECURITY & DATA PROTECTION ANALYSIS** 
+
+_Poznámka: Analýza provedena 5. září 2025 - čeká na implementaci po ověření databáze_
+
+### **✅ SOUČASNÁ BEZPEČNOSTNÍ OPATŘENÍ:**
+
+#### **Input Validation:**
+- ✅ Title: 1-100 znaků, povinný (@NotBlank, @Size)
+- ✅ Description: max 500 znaků (@Size)  
+- ✅ Completed: povinný boolean (@NotNull)
+- ✅ Structured error responses s GlobalExceptionHandler
+- ✅ SQL Injection protection (JPA Repository prepared statements)
+
+#### **Database Security:**
+- ✅ Environment variables pro hesla (žádná hardcoded hesla)
+- ✅ SSL encryption přes Supabase
+- ✅ Connection pooling s limity (max 10 connections)
+- ✅ Transaction Pooler pro optimalizaci
+
+#### **Application Security:**
+- ✅ ID pole jen pro čtení (auto-increment)
+- ✅ Timestamp automatické
+- ✅ Nullable constraints na databázové úrovni
+
+### **⚠️ IDENTIFIKOVANÁ BEZPEČNOSTNÍ RIZIKA:**
+
+#### **🚨 Priority 1 - Kritické:**
+
+**1. Bulk Operations Protection**
+- **Riziko:** Uživatel může smazat/upravit tisíce záznamů najednou
+- **Řešení:** Limit max 10 operací na jeden request
+
+**2. Rate Limiting**
+- **Riziko:** DDoS útoky, spam requests
+- **Řešení:** Max 100 requestů za minutu na IP adresu
+
+**3. Input Sanitization (XSS Protection)**
+- **Riziko:** Malicious scripts v title/description
+- **Řešení:** Regex patterns pro povolené znaky
+
+#### **🔸 Priority 2 - Střední:**
+
+**4. Pagination Protection**  
+- **Riziko:** Uživatel může stáhnout všechna data najednou
+- **Řešení:** Max 100 záznamů na stránku
+
+**5. Content Validation**
+- **Riziko:** Extrémně dlouhé nebo nevalidní obsahy
+- **Řešení:** Dodatečné regex validace
+
+**6. API Endpoint Exposure**
+- **Riziko:** Všechny endpointy dostupné bez omezení
+- **Řešení:** API klíče nebo basic authentication
+
+#### **🔹 Priority 3 - Nízké:**
+
+**7. Database Connection Monitoring**
+- **Riziko:** Uncontrolled connection leaks
+- **Řešení:** Monitoring a alerting
+
+**8. Request Size Limits**
+- **Riziko:** Extrémně velké HTTP requests
+- **Řešení:** Max request body size
+
+### **🔧 NAVRŽENÉ IMPLEMENTACE:**
+
+#### **Bulk Delete Protection:**
+```java
+@DeleteMapping("/bulk")  
+public ResponseEntity<?> bulkDelete(@RequestBody List<Long> ids) {
+    if (ids.size() > 10) {
+        throw new ValidationException("Cannot delete more than 10 items at once");
+    }
+    // Implementation
+}
+```
+
+#### **Input Sanitization:**
+```java
+@Pattern(regexp = "^[a-zA-Z0-9\\s\\-_.,!?()]+$", message = "Invalid characters in title")
+private String title;
+```
+
+#### **Rate Limiting Dependencies:**
+```gradle
+implementation 'org.springframework.boot:spring-boot-starter-actuator'
+implementation 'io.github.bucket4j:bucket4j-core'
+```
+
+#### **Pagination:**
+```java
+@GetMapping
+public ResponseEntity<List<Todo>> getAllTodos(
+    @RequestParam(defaultValue = "0") int page,
+    @RequestParam(defaultValue = "50") int size) {
+    if (size > 100) {
+        throw new ValidationException("Page size cannot exceed 100");
+    }
+}
+```
+
+### **📋 IMPLEMENTAČNÍ PLÁN:**
+
+**Fáze 1: Kritické zabezpečení**
+1. Bulk operations limits
+2. Input sanitization patterns  
+3. Basic rate limiting
+
+**Fáze 2: API zabezpečení**
+1. Pagination implementation
+2. Request size limits
+3. Enhanced validation
+
+**Fáze 3: Monitoring & Analytics**
+1. Security monitoring
+2. Audit logging
+3. Performance metrics
+
+### **⏸️ STATUS: ČEKÁ NA IMPLEMENTACI**
+- **Prerequisite:** Dokončení database connection testing
+- **Estimated effort:** 2-3 hodiny implementation
+- **Priority:** High (před production deployment)
 
 ---
+
+_Poslední aktualizace bezpečnostní analýzy: 5. září 2025_
