@@ -4,28 +4,28 @@
 
 ### **Fáze 1: Základní Todo API** ✅ (Dokončeno)
 
-- **Technologie:** Java 17, Spring Boot 3.4.1, Gradle, H2 databáze
+- **Technologie:** Java 17, Spring Boot 3.4.1, Gradle, PostgreSQL
 - **Funkcionalita:** Kompletní CRUD operace pro Todo items
 - **Deployment:** Úspěšně nasazeno na Render.com
 - **Live API:** https://api-todo-44sn.onrender.com
 - **8 REST Endpointů:** GET, POST, PUT, DELETE, search, completed, pending, info
 
-### **Fáze 2: PostgreSQL Migration** 🔄 (Dokončeno s problémy)
+### **Fáze 2: PostgreSQL Migration** ✅ (Dokončeno)
 
 - **Cíl:** Migrace z H2 in-memory na PostgreSQL cloud database
 - **Cloud Provider:** Supabase (https://supabase.com)
-- **Konfigurace:** Kompletně dokončena, včetně HikariCP connection pooling
-- **Security:** Environment variables pattern pro credential management
-- **Status:** ❌ Blokováno authentication failure - potřeba password reset
+- **Konfigurace:** ✅ Kompletně dokončena, včetně Transaction Pooler
+- **Security:** ✅ Environment variables pattern pro credential management
+- **Status:** ✅ **FUNKČNÍ** - Transaction Pooler pro optimální rychlost
 
-### **Fáze 3: Book ID Checker Enhancement** ⏸️ (Pozastaveno)
+### **Fáze 3: Book ID Checker Enhancement** ✅ (Dokončeno)
 
 - **Cíl:** Integrace s externí Book API
-- **Funkcionalita:** Automatické nahrazení ID čísel informacemi o knihách
-- **Trigger:** Title = "BOOK_CHECKER" + Description = číslo
-- **Externí API:** https://simple-books-api.glitch.me/books/:id
+- **Funkcionalita:** ✅ Automatické nahrazení ID čísel informacemi o knihách
+- **Trigger:** Title = přesně "BOOK_CHECKER" + Description = číslo
+- **Externí API:** https://simple-books-api.click/books/:id
 - **Výstup:** "Název knihy / Autor" místo pouhého ID
-- **Status:** BookService implementován, čeká na dokončení database migration
+- **Status:** ✅ **FUNKČNÍ** - Testováno s book IDs 1,3,4,5,6
 
 ### **Fáze 4: Code Quality & Documentation** ✅ (Dokončeno)
 
@@ -33,6 +33,61 @@
 - **Code Standards:** Dodržení enterprise coding standards
 - **Documentation:** Kompletní @param, @return, @author, @since tags
 - **Maintainability:** Jasné komentáře pro budoucí developery
+- **Exception Handling:** ✅ Jakarta validation compatibility (Spring Boot 3)
+
+### **Fáze 5: ISO 8583 Message Parser** 🚧 (Plánováno)
+
+#### **📋 POŽADAVKY A SPECIFIKACE:**
+
+**Nové pole v Todo entity:**
+- **`iso8583`** (String) - Pro uložení raw ISO 8583 zprávy
+- **`iso8583Message`** (String) - Pro parsed a formatted zprávu
+
+**Struktura ISO 8583 zprávy:**
+1. **MTI** (4 digits) - Message Type Indicator
+2. **Primary Bitmap** (8 bytes/16 hex) - Indikuje přítomnost polí 2-64  
+3. **Data Elements** - Variabilní pole podle bitmap
+
+**Parser Logic:**
+- **Input:** Raw hex string v `iso8583` poli
+- **Processing:** Parse MTI + bitmap + data elements
+- **Output:** Formatted string v `iso8583Message`
+
+**Formát Output:**
+```
+MTI: 0100, DE002: 1234567890123456789, DE003: 000000, DE004: 000000002500, DE011: 123456, DE041: 1234ABCD
+```
+
+**Data Element Typy:**
+- **Fixed length:** n6 = přesně 6 číslic
+- **LLVAR:** nn..19 = 2 délkové číslice + data (max 19)
+- **LLLVAR:** nnn..999 = 3 délkové číslice + data (max 999)
+
+**Příklad zprávy:**
+```
+Input:  0100702000000080000019123456789012345678900000000000025001234561234ABCD
+Parse:  MTI=0100, Bitmap=7020000000800000, DE002=1234567890123456789, DE003=000000, DE004=000000002500, DE011=123456, DE041=1234ABCD
+```
+
+**Field Specifications (ISO 8583):**
+- DE002: n..19 (PAN)
+- DE003: n6 (Processing Code)  
+- DE004: n12 (Transaction Amount)
+- DE007: n10 (Transmission Date & Time)
+- DE011: n6 (STAN)
+- DE012: n6 (Local Transaction Time)
+- DE041: ans8 (Terminal ID)
+- DE039: an2 (Response Code)
+
+**Implementation Plan:**
+1. ✅ Poznámky do README
+2. 🚧 Extend Todo entity s `iso8583` + `iso8583Message` fields
+3. 🚧 Create ISO8583Parser service class
+4. 🚧 Update TodoController s parser logic
+5. 🚧 Database migration script
+6. 🚧 Unit tests pro parser
+7. 🚧 Integration tests
+8. 🚧 Render deployment
 
 ## 📁 **STRUKTURA PROJEKTU**
 
@@ -167,6 +222,7 @@ export DATABASE_PASSWORD='tvoje-heslo-ze-supabase'
 #### **1️⃣ Java Development Kit (JDK 17)**
 
 **Doporučený postup - Chocolatey:**
+
 ```cmd
 # 1. Nainstaluj Chocolatey (PowerShell jako Admin):
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
@@ -176,6 +232,7 @@ choco install openjdk17
 ```
 
 **Alternativní postup - Ruční instalace:**
+
 1. Stáhni z: https://adoptium.net/temurin/releases/
 2. Vyber **JDK 17**, **Windows x64**, **.msi installer**
 3. Spusť installer a postupuj podle instrukcí
@@ -183,10 +240,12 @@ choco install openjdk17
 #### **2️⃣ VS Code Extensions**
 
 **Nainstaluj tyto extension packs:**
+
 - `Extension Pack for Java` (vscjava.vscode-java-pack)
 - `Spring Boot Extension Pack` (vmware.vscode-boot-dev-pack)
 
 #### **3️⃣ Git pro Windows**
+
 ```cmd
 # Přes Chocolatey:
 choco install git
@@ -211,6 +270,7 @@ git --version
 ```
 
 ### **Testování:**
+
 - API: http://localhost:8080/api/todos
 - H2 Console: http://localhost:8080/h2-console
 - VS Code automaticky detekuje Java projekt a poskytne IntelliSense
@@ -240,11 +300,12 @@ _Posledně aktualizováno: 5. září 2025 - PostgreSQL migration dokončena s a
 
 ---
 
-## 🐘 **POSTGRESQL MIGRATION - COMPLETED WITH ISSUES** 
+## 🐘 **POSTGRESQL MIGRATION - COMPLETED WITH ISSUES**
 
 ### **✅ Dokončené kroky:**
 
 #### **✅ Krok 1: Supabase Setup**
+
 - **Projekt vytvořen:** https://supabase.com
 - **Database Host:** db.ieesukcrbwebduaqupzv.supabase.co:5432
 - **Username:** postgres
@@ -254,6 +315,7 @@ _Posledně aktualizováno: 5. září 2025 - PostgreSQL migration dokončena s a
 #### **✅ Krok 2: Spring Boot Changes**
 
 **A) PostgreSQL dependency přidána do `build.gradle`:**
+
 ```gradle
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -268,6 +330,7 @@ dependencies {
 ```
 
 **B) `application.properties` kompletně migrováno:**
+
 ```properties
 # === POSTGRESQL CONFIGURATION ===
 spring.datasource.url=jdbc:postgresql://db.ieesukcrbwebduaqupzv.supabase.co:5432/postgres
@@ -293,6 +356,7 @@ logging.level.com.pavel.todoapi=DEBUG
 ```
 
 #### **✅ Krok 3: DataInitializer Update**
+
 - **Status:** ✅ DOKONČENO
 - **Změny:** Vypnut `deleteAll()` pro produkci
 - **Funkčnost:** Pouze počítá existující záznamy, nevytváří vzorová data
@@ -300,11 +364,13 @@ logging.level.com.pavel.todoapi=DEBUG
 ### **❌ SOUČASNÝ PROBLÉM: Database Authentication**
 
 #### **🚨 Chyba:**
+
 ```
 FATAL: password authentication failed for user "postgres"
 ```
 
 #### **📋 Diagnostika:**
+
 1. **Environment Variable:** ✅ Správně nastavena
 2. **Connection String:** ✅ Správná konfigurace
 3. **Username:** ✅ postgres
@@ -314,6 +380,7 @@ FATAL: password authentication failed for user "postgres"
 ### **🔧 ŘEŠENÍ PRO ZÍTRA:**
 
 #### **Krok 1: Reset Database Password v Supabase**
+
 1. Přihlas se na https://supabase.com
 2. Jdi na svůj projekt
 3. **Settings** → **Database**
@@ -321,6 +388,7 @@ FATAL: password authentication failed for user "postgres"
 5. **Vygeneruj nové heslo** a ulož si ho
 
 #### **Krok 2: Aktualizace Environment Variable**
+
 ```bash
 # Nastav nové heslo
 export DATABASE_PASSWORD='nove-heslo-ze-supabase'
@@ -330,6 +398,7 @@ export DATABASE_PASSWORD='nove-heslo-ze-supabase'
 ```
 
 #### **Krok 3: Verify Everything Works**
+
 ```bash
 # Zkontroluj API
 curl http://localhost:8080/api/todos/info
@@ -338,19 +407,22 @@ curl http://localhost:8080/api/todos/info
 ```
 
 ### **🔒 Security Notes:**
+
 - ✅ **Environment Variables:** Používáme `${DATABASE_PASSWORD}` pattern
 - ✅ **No Hardcoded Passwords:** Žádná hesla v kódu
 - ✅ **SSL Encryption:** Automaticky přes Supabase
 - ⚠️ **Password Reset:** Pravděpodobně nutné každý týden
 
 ### **📊 Migration Status:**
+
 - **Konfigurační soubory:** ✅ 100% dokončeno
-- **Dependencies:** ✅ 100% dokončeno  
+- **Dependencies:** ✅ 100% dokončeno
 - **Code Changes:** ✅ 100% dokončeno
 - **Database Connection:** ❌ Blokováno neplatným heslem
 - **Production Ready:** 🔄 Pending password reset
 
 ### **📞 Next Steps:**
+
 1. **Password reset** v Supabase dashboard
 2. **Test connection** s novým heslem
 3. **Deploy to production** když vše funguje
@@ -359,26 +431,29 @@ curl http://localhost:8080/api/todos/info
 
 ---
 
-## 🛡️ **SECURITY & DATA PROTECTION ANALYSIS** 
+## 🛡️ **SECURITY & DATA PROTECTION ANALYSIS**
 
 _Poznámka: Analýza provedena 5. září 2025 - čeká na implementaci po ověření databáze_
 
 ### **✅ SOUČASNÁ BEZPEČNOSTNÍ OPATŘENÍ:**
 
 #### **Input Validation:**
+
 - ✅ Title: 1-100 znaků, povinný (@NotBlank, @Size)
-- ✅ Description: max 500 znaků (@Size)  
+- ✅ Description: max 500 znaků (@Size)
 - ✅ Completed: povinný boolean (@NotNull)
 - ✅ Structured error responses s GlobalExceptionHandler
 - ✅ SQL Injection protection (JPA Repository prepared statements)
 
 #### **Database Security:**
+
 - ✅ Environment variables pro hesla (žádná hardcoded hesla)
 - ✅ SSL encryption přes Supabase
 - ✅ Connection pooling s limity (max 10 connections)
 - ✅ Transaction Pooler pro optimalizaci
 
 #### **Application Security:**
+
 - ✅ ID pole jen pro čtení (auto-increment)
 - ✅ Timestamp automatické
 - ✅ Nullable constraints na databázové úrovni
@@ -388,46 +463,55 @@ _Poznámka: Analýza provedena 5. září 2025 - čeká na implementaci po ově�
 #### **🚨 Priority 1 - Kritické:**
 
 **1. Bulk Operations Protection**
+
 - **Riziko:** Uživatel může smazat/upravit tisíce záznamů najednou
 - **Řešení:** Limit max 10 operací na jeden request
 
 **2. Rate Limiting**
+
 - **Riziko:** DDoS útoky, spam requests
 - **Řešení:** Max 100 requestů za minutu na IP adresu
 
 **3. Input Sanitization (XSS Protection)**
+
 - **Riziko:** Malicious scripts v title/description
 - **Řešení:** Regex patterns pro povolené znaky
 
 #### **🔸 Priority 2 - Střední:**
 
-**4. Pagination Protection**  
+**4. Pagination Protection**
+
 - **Riziko:** Uživatel může stáhnout všechna data najednou
 - **Řešení:** Max 100 záznamů na stránku
 
 **5. Content Validation**
+
 - **Riziko:** Extrémně dlouhé nebo nevalidní obsahy
 - **Řešení:** Dodatečné regex validace
 
 **6. API Endpoint Exposure**
+
 - **Riziko:** Všechny endpointy dostupné bez omezení
 - **Řešení:** API klíče nebo basic authentication
 
 #### **🔹 Priority 3 - Nízké:**
 
 **7. Database Connection Monitoring**
+
 - **Riziko:** Uncontrolled connection leaks
 - **Řešení:** Monitoring a alerting
 
 **8. Request Size Limits**
+
 - **Riziko:** Extrémně velké HTTP requests
 - **Řešení:** Max request body size
 
 ### **🔧 NAVRŽENÉ IMPLEMENTACE:**
 
 #### **Bulk Delete Protection:**
+
 ```java
-@DeleteMapping("/bulk")  
+@DeleteMapping("/bulk")
 public ResponseEntity<?> bulkDelete(@RequestBody List<Long> ids) {
     if (ids.size() > 10) {
         throw new ValidationException("Cannot delete more than 10 items at once");
@@ -437,18 +521,21 @@ public ResponseEntity<?> bulkDelete(@RequestBody List<Long> ids) {
 ```
 
 #### **Input Sanitization:**
+
 ```java
 @Pattern(regexp = "^[a-zA-Z0-9\\s\\-_.,!?()]+$", message = "Invalid characters in title")
 private String title;
 ```
 
 #### **Rate Limiting Dependencies:**
+
 ```gradle
 implementation 'org.springframework.boot:spring-boot-starter-actuator'
 implementation 'io.github.bucket4j:bucket4j-core'
 ```
 
 #### **Pagination:**
+
 ```java
 @GetMapping
 public ResponseEntity<List<Todo>> getAllTodos(
@@ -463,21 +550,25 @@ public ResponseEntity<List<Todo>> getAllTodos(
 ### **📋 IMPLEMENTAČNÍ PLÁN:**
 
 **Fáze 1: Kritické zabezpečení**
+
 1. Bulk operations limits
-2. Input sanitization patterns  
+2. Input sanitization patterns
 3. Basic rate limiting
 
 **Fáze 2: API zabezpečení**
+
 1. Pagination implementation
 2. Request size limits
 3. Enhanced validation
 
 **Fáze 3: Monitoring & Analytics**
+
 1. Security monitoring
 2. Audit logging
 3. Performance metrics
 
 ### **⏸️ STATUS: ČEKÁ NA IMPLEMENTACI**
+
 - **Prerequisite:** Dokončení database connection testing
 - **Estimated effort:** 2-3 hodiny implementation
 - **Priority:** High (před production deployment)
