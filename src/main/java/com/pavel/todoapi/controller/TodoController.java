@@ -190,7 +190,7 @@ public class TodoController {
      */
     /**
      * Enhanced detection for ISO 8583 hex messages
-     * Supports various formats and MTI patterns commonly used in financial transactions
+     * More flexible approach - focuses on MTI pattern and minimum length
      * 
      * @param input the string to check for ISO 8583 format
      * @return true if the input appears to be an ISO 8583 hex message
@@ -207,25 +207,39 @@ public class TodoController {
             return false;
         }
         
-        // Check for valid ISO 8583 MTI patterns (first 4 characters must be hex digits)
+        // Check for valid ISO 8583 MTI patterns (first 4 characters)
         if (cleaned.length() >= 4) {
             String mti = cleaned.substring(0, 4);
             
-            // MTI must be pure hex
-            if (!mti.matches("^[0-9A-F]+$")) {
-                return false;
-            }
+            // MTI patterns for ISO 8583:
+            // 0xxx = Authorization messages (0100, 0110, 0200, 0210, etc.)
+            // 1xxx = Financial messages
+            // 2xxx = File action messages  
+            // 3xxx = Network management messages
+            // 4xxx = Reversal messages
+            // 5xxx = Reconciliation messages
+            // 8xxx = Network management messages
+            // 9xxx = Reserved for private use
             
-            // Check for bitmap (next 16 characters should be hex)
-            if (cleaned.length() >= 20) {
-                String bitmap = cleaned.substring(4, 20);
-                if (!bitmap.matches("^[0-9A-F]+$")) {
-                    return false;
+            // Check if MTI follows ISO 8583 pattern (starts with valid digits)
+            if (mti.matches("^[0-9][0-9][0-9][0-9]$")) {
+                String firstDigit = mti.substring(0, 1);
+                
+                // Valid first digits for ISO 8583 MTI
+                if (firstDigit.matches("^[01234589]$")) {
+                    
+                    // Check that first 20 chars contain mostly hex (allowing some flexibility)
+                    String prefix = cleaned.substring(0, 20);
+                    long hexChars = prefix.chars()
+                        .mapToObj(c -> (char) c)
+                        .map(c -> c.toString())
+                        .filter(s -> s.matches("[0-9A-F]"))
+                        .count();
+                    
+                    // At least 16 out of 20 characters should be valid hex (80% threshold)
+                    return hexChars >= 16;
                 }
             }
-            
-            // Common ISO 8583 MTI patterns - be more flexible with mixed content after bitmap
-            return mti.matches("^(0[0-9A-F][0-9A-F][0-9A-F]|1[0-9A-F][0-9A-F][0-9A-F]|2[0-9A-F][0-9A-F][0-9A-F]|3[0-9A-F][0-9A-F][0-9A-F]|4[0-9A-F][0-9A-F][0-9A-F]|5[0-9A-F][0-9A-F][0-9A-F]|8[0-9A-F][0-9A-F][0-9A-F]|9[0-9A-F][0-9A-F][0-9A-F])$");
         }
         
         return false;

@@ -149,28 +149,41 @@ public class ISO8583Parser {
     private String parseField(String hexMessage, int startPos, String fieldType, int maxLength) {
         try {
             if (fieldType.equals("LLVAR")) {
-                // LLVAR: 2-digit length + data
+                // LLVAR: 2-hex-digit length + data (length is in BCD format)
                 if (startPos + 2 > hexMessage.length()) {
                     return "ERROR - Insufficient data for LLVAR length";
                 }
                 
                 String lengthHex = hexMessage.substring(startPos, startPos + 2);
-                int dataLength = Integer.parseInt(lengthHex, 10); // Parse as decimal, not hex
+                int dataLength;
+                
+                try {
+                    // Try parsing length as BCD (each hex digit represents decimal)
+                    dataLength = Integer.parseInt(lengthHex, 16); // Parse hex to get actual length
+                } catch (NumberFormatException e) {
+                    return "ERROR - Invalid LLVAR length format: " + lengthHex;
+                }
                 
                 if (startPos + 2 + dataLength > hexMessage.length()) {
-                    return "ERROR - Insufficient data for LLVAR content";
+                    return "ERROR - Insufficient data for LLVAR content (need " + dataLength + " chars)";
                 }
                 
                 return hexMessage.substring(startPos + 2, startPos + 2 + dataLength);
                 
             } else if (fieldType.equals("LLLVAR")) {
-                // LLLVAR: 3-digit length + data
+                // LLLVAR: 3-hex-digit length + data
                 if (startPos + 3 > hexMessage.length()) {
                     return "ERROR - Insufficient data for LLLVAR length";
                 }
                 
                 String lengthHex = hexMessage.substring(startPos, startPos + 3);
-                int dataLength = Integer.parseInt(lengthHex, 10);
+                int dataLength;
+                
+                try {
+                    dataLength = Integer.parseInt(lengthHex, 16);
+                } catch (NumberFormatException e) {
+                    return "ERROR - Invalid LLLVAR length format: " + lengthHex;
+                }
                 
                 if (startPos + 3 + dataLength > hexMessage.length()) {
                     return "ERROR - Insufficient data for LLLVAR content";
@@ -206,18 +219,23 @@ public class ISO8583Parser {
      * Calculate next position after current field
      */
     private int getNextPosition(String hexMessage, int currentPos, String fieldType, int maxLength) {
-        if (fieldType.equals("LLVAR")) {
-            String lengthHex = hexMessage.substring(currentPos, currentPos + 2);
-            int dataLength = Integer.parseInt(lengthHex, 10); // Parse as decimal
-            return currentPos + 2 + dataLength;
-        } else if (fieldType.equals("LLLVAR")) {
-            String lengthHex = hexMessage.substring(currentPos, currentPos + 3);
-            int dataLength = Integer.parseInt(lengthHex, 10);
-            return currentPos + 3 + dataLength;
-        } else if (fieldType.equals("n")) {
-            return currentPos + maxLength;
-        } else if (fieldType.equals("ans") || fieldType.equals("an")) {
-            return currentPos + maxLength;
+        try {
+            if (fieldType.equals("LLVAR")) {
+                String lengthHex = hexMessage.substring(currentPos, currentPos + 2);
+                int dataLength = Integer.parseInt(lengthHex, 16); // Parse as hex
+                return currentPos + 2 + dataLength;
+            } else if (fieldType.equals("LLLVAR")) {
+                String lengthHex = hexMessage.substring(currentPos, currentPos + 3);
+                int dataLength = Integer.parseInt(lengthHex, 16); // Parse as hex
+                return currentPos + 3 + dataLength;
+            } else if (fieldType.equals("n")) {
+                return currentPos + maxLength;
+            } else if (fieldType.equals("ans") || fieldType.equals("an")) {
+                return currentPos + maxLength;
+            }
+        } catch (Exception e) {
+            // Return current position if there's an error
+            return currentPos;
         }
         return currentPos;
     }
