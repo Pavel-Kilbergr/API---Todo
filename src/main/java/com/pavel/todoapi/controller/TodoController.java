@@ -119,8 +119,23 @@ public class TodoController {
             // If bookInfo is null, keep original description as fallback
         }
         
-        // Check if this is an ISO 8583 Parser request
-        if ("ISO8583_PARSER".equals(todo.getTitle()) && todo.getDescription() != null) {
+        // Auto-detect ISO 8583 message based on hex pattern
+        if (isISO8583HexMessage(todo.getTitle()) || isISO8583HexMessage(todo.getDescription())) {
+            String hexMessage = isISO8583HexMessage(todo.getTitle()) ? todo.getTitle() : todo.getDescription();
+            
+            String parsedMessage = processISO8583Parser(hexMessage);
+            
+            // Auto-set title and organize data
+            todo.setTitle("ISO8583_PARSER");
+            todo.setDescription("Auto-detected ISO 8583 message");
+            todo.setIso8583(hexMessage.trim());
+            todo.setIso8583Message(parsedMessage);
+            
+            System.out.println("✅ Auto-detected ISO 8583 message: " + parsedMessage);
+        }
+        
+        // Check if this is a manual ISO 8583 Parser request (existing trigger)
+        else if ("ISO8583_PARSER".equals(todo.getTitle()) && todo.getDescription() != null) {
             String parsedMessage = processISO8583Parser(todo.getDescription());
             
             // Store raw hex in iso8583 field
@@ -129,7 +144,7 @@ public class TodoController {
             // Store parsed message in iso8583Message field
             todo.setIso8583Message(parsedMessage);
             
-            System.out.println("✅ ISO 8583 Parser processed: " + parsedMessage);
+            System.out.println("✅ Manual ISO 8583 Parser processed: " + parsedMessage);
         }
         
         Todo savedTodo = todoRepository.save(todo);
@@ -164,6 +179,24 @@ public class TodoController {
         }
         
         return null; // Fallback - keep original description
+    }
+    
+    /**
+     * Auto-detects if string is an ISO 8583 hex message
+     * Checks for hex format and minimum length requirements
+     * 
+     * @param input the string to check
+     * @return true if looks like ISO 8583 hex message
+     */
+    private boolean isISO8583HexMessage(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return false;
+        }
+        
+        String cleaned = input.replaceAll("\\s", "").trim();
+        
+        // Check if it's valid hex format and minimum length for ISO 8583
+        return cleaned.matches("^[0-9A-Fa-f]+$") && cleaned.length() >= 20;
     }
     
     /**

@@ -135,30 +135,30 @@ public class ISO8583Parser {
         try {
             if (fieldType.equals("LLVAR")) {
                 // LLVAR: 2-digit length + data
-                if (startPos + 4 > hexMessage.length()) {
+                if (startPos + 2 > hexMessage.length()) {
                     return "ERROR - Insufficient data for LLVAR length";
                 }
                 
                 String lengthHex = hexMessage.substring(startPos, startPos + 2);
-                int dataLength = Integer.parseInt(lengthHex);
+                int dataLength = Integer.parseInt(lengthHex, 10); // Parse as decimal, not hex
                 
-                if (startPos + 2 + (dataLength * 2) > hexMessage.length()) {
+                if (startPos + 2 + dataLength > hexMessage.length()) {
                     return "ERROR - Insufficient data for LLVAR content";
                 }
                 
-                return hexMessage.substring(startPos + 2, startPos + 2 + (dataLength * 2));
+                return hexMessage.substring(startPos + 2, startPos + 2 + dataLength);
                 
             } else if (fieldType.equals("n")) {
                 // Fixed numeric field
-                int hexLength = maxLength; // For numeric fields, hex length = decimal length
+                int hexLength = maxLength; // For numeric fields, each digit = 1 hex character
                 if (startPos + hexLength > hexMessage.length()) {
                     return "ERROR - Insufficient data for numeric field";
                 }
                 return hexMessage.substring(startPos, startPos + hexLength);
                 
             } else if (fieldType.equals("ans")) {
-                // Fixed alphanumeric special field
-                int hexLength = maxLength * 2; // Each character = 2 hex digits
+                // Fixed alphanumeric special field - each character = 1 hex digit for simplicity
+                int hexLength = maxLength; 
                 if (startPos + hexLength > hexMessage.length()) {
                     return "ERROR - Insufficient data for ans field";
                 }
@@ -178,12 +178,12 @@ public class ISO8583Parser {
     private int getNextPosition(String hexMessage, int currentPos, String fieldType, int maxLength) {
         if (fieldType.equals("LLVAR")) {
             String lengthHex = hexMessage.substring(currentPos, currentPos + 2);
-            int dataLength = Integer.parseInt(lengthHex);
-            return currentPos + 2 + (dataLength * 2);
+            int dataLength = Integer.parseInt(lengthHex, 10); // Parse as decimal
+            return currentPos + 2 + dataLength;
         } else if (fieldType.equals("n")) {
             return currentPos + maxLength;
         } else if (fieldType.equals("ans")) {
-            return currentPos + (maxLength * 2);
+            return currentPos + maxLength;
         }
         return currentPos;
     }
