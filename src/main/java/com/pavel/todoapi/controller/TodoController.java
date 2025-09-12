@@ -200,33 +200,32 @@ public class TodoController {
             return false;
         }
         
-        String cleaned = input.replaceAll("\\s", "").trim();
-        
-        // Check basic hex format
-        if (!cleaned.matches("^[0-9A-Fa-f]+$")) {
-            return false;
-        }
+        String cleaned = input.replaceAll("\\s", "").trim().toUpperCase();
         
         // Must be at least 20 characters (4 MTI + 16 bitmap minimum)
         if (cleaned.length() < 20) {
             return false;
         }
         
-        // Check for valid ISO 8583 MTI patterns (Message Type Indicator)
+        // Check for valid ISO 8583 MTI patterns (first 4 characters must be hex digits)
         if (cleaned.length() >= 4) {
-            String mti = cleaned.substring(0, 4).toUpperCase();
+            String mti = cleaned.substring(0, 4);
             
-            // Common ISO 8583 MTI patterns:
-            // 0xxx = Authorization messages
-            // 1xxx = Financial messages  
-            // 2xxx = File action messages
-            // 3xxx = Network management messages
-            // 4xxx = Reversal messages
-            // 5xxx = Reconciliation messages
-            // 8xxx = Network management messages
-            // 9xxx = Reserved for private use
+            // MTI must be pure hex
+            if (!mti.matches("^[0-9A-F]+$")) {
+                return false;
+            }
             
-            return mti.matches("^(0[0-9][0-9][0-9]|1[0-9][0-9][0-9]|2[0-9][0-9][0-9]|3[0-9][0-9][0-9]|4[0-9][0-9][0-9]|5[0-9][0-9][0-9]|8[0-9][0-9][0-9]|9[0-9][0-9][0-9])$");
+            // Check for bitmap (next 16 characters should be hex)
+            if (cleaned.length() >= 20) {
+                String bitmap = cleaned.substring(4, 20);
+                if (!bitmap.matches("^[0-9A-F]+$")) {
+                    return false;
+                }
+            }
+            
+            // Common ISO 8583 MTI patterns - be more flexible with mixed content after bitmap
+            return mti.matches("^(0[0-9A-F][0-9A-F][0-9A-F]|1[0-9A-F][0-9A-F][0-9A-F]|2[0-9A-F][0-9A-F][0-9A-F]|3[0-9A-F][0-9A-F][0-9A-F]|4[0-9A-F][0-9A-F][0-9A-F]|5[0-9A-F][0-9A-F][0-9A-F]|8[0-9A-F][0-9A-F][0-9A-F]|9[0-9A-F][0-9A-F][0-9A-F])$");
         }
         
         return false;
