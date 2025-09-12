@@ -251,12 +251,12 @@ public class ISO8583Parser {
     private int getNextPosition(String hexMessage, int currentPos, String fieldType, int maxLength) {
         try {
             if (fieldType.equals("LLVAR")) {
-                String lengthHex = hexMessage.substring(currentPos, currentPos + 2);
-                int dataLength = Integer.parseInt(lengthHex, 16); // Parse as hex
+                String lengthStr = hexMessage.substring(currentPos, currentPos + 2);
+                int dataLength = Integer.parseInt(lengthStr, 10); // Parse as decimal
                 return currentPos + 2 + dataLength;
             } else if (fieldType.equals("LLLVAR")) {
-                String lengthHex = hexMessage.substring(currentPos, currentPos + 3);
-                int dataLength = Integer.parseInt(lengthHex, 16); // Parse as hex
+                String lengthStr = hexMessage.substring(currentPos, currentPos + 3);
+                int dataLength = Integer.parseInt(lengthStr, 10); // Parse as decimal
                 return currentPos + 3 + dataLength;
             } else if (fieldType.equals("n")) {
                 return currentPos + maxLength;
