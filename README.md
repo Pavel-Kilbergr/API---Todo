@@ -40,38 +40,45 @@
 #### **📋 POŽADAVKY A SPECIFIKACE:**
 
 **Nové pole v Todo entity:**
+
 - **`iso8583`** (String) - Pro uložení raw ISO 8583 zprávy
 - **`iso8583Message`** (String) - Pro parsed a formatted zprávu
 
 **Struktura ISO 8583 zprávy:**
+
 1. **MTI** (4 digits) - Message Type Indicator
-2. **Primary Bitmap** (8 bytes/16 hex) - Indikuje přítomnost polí 2-64  
+2. **Primary Bitmap** (8 bytes/16 hex) - Indikuje přítomnost polí 2-64
 3. **Data Elements** - Variabilní pole podle bitmap
 
 **Parser Logic:**
+
 - **Input:** Raw hex string v `iso8583` poli
 - **Processing:** Parse MTI + bitmap + data elements
 - **Output:** Formatted string v `iso8583Message`
 
 **Formát Output:**
+
 ```
 MTI: 0100, DE002: 1234567890123456789, DE003: 000000, DE004: 000000002500, DE011: 123456, DE041: 1234ABCD
 ```
 
 **Data Element Typy:**
+
 - **Fixed length:** n6 = přesně 6 číslic
 - **LLVAR:** nn..19 = 2 délkové číslice + data (max 19)
 - **LLLVAR:** nnn..999 = 3 délkové číslice + data (max 999)
 
 **Příklad zprávy:**
+
 ```
 Input:  0100702000000080000019123456789012345678900000000000025001234561234ABCD
 Parse:  MTI=0100, Bitmap=7020000000800000, DE002=1234567890123456789, DE003=000000, DE004=000000002500, DE011=123456, DE041=1234ABCD
 ```
 
 **Field Specifications (ISO 8583):**
+
 - DE002: n..19 (PAN)
-- DE003: n6 (Processing Code)  
+- DE003: n6 (Processing Code)
 - DE004: n12 (Transaction Amount)
 - DE007: n10 (Transmission Date & Time)
 - DE011: n6 (STAN)
@@ -80,6 +87,7 @@ Parse:  MTI=0100, Bitmap=7020000000800000, DE002=1234567890123456789, DE003=0000
 - DE039: an2 (Response Code)
 
 **Implementation Plan:**
+
 1. ✅ Poznámky do README
 2. 🚧 Extend Todo entity s `iso8583` + `iso8583Message` fields
 3. 🚧 Create ISO8583Parser service class

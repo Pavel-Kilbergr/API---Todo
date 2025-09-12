@@ -25,11 +25,26 @@ public class ISO8583Parser {
         FIELD_DEFINITIONS.put(2, new String[]{"LLVAR", "19", "Primary Account Number (PAN)"});
         FIELD_DEFINITIONS.put(3, new String[]{"n", "6", "Processing Code"});
         FIELD_DEFINITIONS.put(4, new String[]{"n", "12", "Transaction Amount"});
+        FIELD_DEFINITIONS.put(6, new String[]{"n", "12", "Cardholder Billing Amount"});
         FIELD_DEFINITIONS.put(7, new String[]{"n", "10", "Transmission Date & Time"});
         FIELD_DEFINITIONS.put(11, new String[]{"n", "6", "System Trace Audit Number (STAN)"});
         FIELD_DEFINITIONS.put(12, new String[]{"n", "6", "Local Transaction Time"});
-        FIELD_DEFINITIONS.put(41, new String[]{"ans", "8", "Terminal ID"});
+        FIELD_DEFINITIONS.put(13, new String[]{"n", "4", "Local Transaction Date"});
+        FIELD_DEFINITIONS.put(14, new String[]{"n", "4", "Expiration Date"});
+        FIELD_DEFINITIONS.put(18, new String[]{"n", "4", "Merchant Category Code"});
+        FIELD_DEFINITIONS.put(22, new String[]{"n", "3", "POS Entry Mode"});
+        FIELD_DEFINITIONS.put(25, new String[]{"n", "2", "POS Condition Code"});
+        FIELD_DEFINITIONS.put(32, new String[]{"LLVAR", "11", "Acquiring Institution Code"});
+        FIELD_DEFINITIONS.put(35, new String[]{"LLVAR", "37", "Track 2 Data"});
+        FIELD_DEFINITIONS.put(37, new String[]{"an", "12", "Retrieval Reference Number"});
+        FIELD_DEFINITIONS.put(38, new String[]{"an", "6", "Authorization Code"});
         FIELD_DEFINITIONS.put(39, new String[]{"an", "2", "Response Code"});
+        FIELD_DEFINITIONS.put(41, new String[]{"ans", "8", "Terminal ID"});
+        FIELD_DEFINITIONS.put(42, new String[]{"ans", "15", "Merchant ID"});
+        FIELD_DEFINITIONS.put(43, new String[]{"ans", "40", "Card Acceptor Name/Location"});
+        FIELD_DEFINITIONS.put(49, new String[]{"n", "3", "Currency Code"});
+        FIELD_DEFINITIONS.put(54, new String[]{"LLLVAR", "255", "Additional Amounts"});
+        FIELD_DEFINITIONS.put(55, new String[]{"LLLVAR", "999", "ICC Data"});
     }
     
     /**
@@ -148,6 +163,21 @@ public class ISO8583Parser {
                 
                 return hexMessage.substring(startPos + 2, startPos + 2 + dataLength);
                 
+            } else if (fieldType.equals("LLLVAR")) {
+                // LLLVAR: 3-digit length + data
+                if (startPos + 3 > hexMessage.length()) {
+                    return "ERROR - Insufficient data for LLLVAR length";
+                }
+                
+                String lengthHex = hexMessage.substring(startPos, startPos + 3);
+                int dataLength = Integer.parseInt(lengthHex, 10);
+                
+                if (startPos + 3 + dataLength > hexMessage.length()) {
+                    return "ERROR - Insufficient data for LLLVAR content";
+                }
+                
+                return hexMessage.substring(startPos + 3, startPos + 3 + dataLength);
+                
             } else if (fieldType.equals("n")) {
                 // Fixed numeric field
                 int hexLength = maxLength; // For numeric fields, each digit = 1 hex character
@@ -180,9 +210,13 @@ public class ISO8583Parser {
             String lengthHex = hexMessage.substring(currentPos, currentPos + 2);
             int dataLength = Integer.parseInt(lengthHex, 10); // Parse as decimal
             return currentPos + 2 + dataLength;
+        } else if (fieldType.equals("LLLVAR")) {
+            String lengthHex = hexMessage.substring(currentPos, currentPos + 3);
+            int dataLength = Integer.parseInt(lengthHex, 10);
+            return currentPos + 3 + dataLength;
         } else if (fieldType.equals("n")) {
             return currentPos + maxLength;
-        } else if (fieldType.equals("ans")) {
+        } else if (fieldType.equals("ans") || fieldType.equals("an")) {
             return currentPos + maxLength;
         }
         return currentPos;

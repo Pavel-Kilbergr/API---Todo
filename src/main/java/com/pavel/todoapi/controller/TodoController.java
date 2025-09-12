@@ -188,6 +188,13 @@ public class TodoController {
      * @param input the string to check
      * @return true if looks like ISO 8583 hex message
      */
+    /**
+     * Enhanced detection for ISO 8583 hex messages
+     * Supports various formats and MTI patterns commonly used in financial transactions
+     * 
+     * @param input the string to check for ISO 8583 format
+     * @return true if the input appears to be an ISO 8583 hex message
+     */
     private boolean isISO8583HexMessage(String input) {
         if (input == null || input.trim().isEmpty()) {
             return false;
@@ -195,8 +202,34 @@ public class TodoController {
         
         String cleaned = input.replaceAll("\\s", "").trim();
         
-        // Check if it's valid hex format and minimum length for ISO 8583
-        return cleaned.matches("^[0-9A-Fa-f]+$") && cleaned.length() >= 20;
+        // Check basic hex format
+        if (!cleaned.matches("^[0-9A-Fa-f]+$")) {
+            return false;
+        }
+        
+        // Must be at least 20 characters (4 MTI + 16 bitmap minimum)
+        if (cleaned.length() < 20) {
+            return false;
+        }
+        
+        // Check for valid ISO 8583 MTI patterns (Message Type Indicator)
+        if (cleaned.length() >= 4) {
+            String mti = cleaned.substring(0, 4).toUpperCase();
+            
+            // Common ISO 8583 MTI patterns:
+            // 0xxx = Authorization messages
+            // 1xxx = Financial messages  
+            // 2xxx = File action messages
+            // 3xxx = Network management messages
+            // 4xxx = Reversal messages
+            // 5xxx = Reconciliation messages
+            // 8xxx = Network management messages
+            // 9xxx = Reserved for private use
+            
+            return mti.matches("^(0[0-9][0-9][0-9]|1[0-9][0-9][0-9]|2[0-9][0-9][0-9]|3[0-9][0-9][0-9]|4[0-9][0-9][0-9]|5[0-9][0-9][0-9]|8[0-9][0-9][0-9]|9[0-9][0-9][0-9])$");
+        }
+        
+        return false;
     }
     
     /**
