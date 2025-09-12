@@ -21,30 +21,60 @@ public class ISO8583Parser {
     private static final Map<Integer, String[]> FIELD_DEFINITIONS = new HashMap<>();
     
     static {
-        // Initialize field definitions according to ISO 8583 standard
+        // Initialize field definitions according to ISO 8583 standard from specification
         FIELD_DEFINITIONS.put(2, new String[]{"LLVAR", "19", "Primary Account Number (PAN)"});
         FIELD_DEFINITIONS.put(3, new String[]{"n", "6", "Processing Code"});
         FIELD_DEFINITIONS.put(4, new String[]{"n", "12", "Transaction Amount"});
-        FIELD_DEFINITIONS.put(6, new String[]{"n", "12", "Cardholder Billing Amount"});
+        FIELD_DEFINITIONS.put(5, new String[]{"n", "12", "Amount, settlement"});
+        FIELD_DEFINITIONS.put(6, new String[]{"n", "12", "Amount, cardholder billing"});
         FIELD_DEFINITIONS.put(7, new String[]{"n", "10", "Transmission Date & Time"});
+        FIELD_DEFINITIONS.put(8, new String[]{"n", "8", "Amount, cardholder billing fee"});
+        FIELD_DEFINITIONS.put(9, new String[]{"n", "8", "Conversion rate, settlement"});
+        FIELD_DEFINITIONS.put(10, new String[]{"n", "8", "Conversion rate, cardholder billing"});
         FIELD_DEFINITIONS.put(11, new String[]{"n", "6", "System Trace Audit Number (STAN)"});
         FIELD_DEFINITIONS.put(12, new String[]{"n", "6", "Local Transaction Time"});
         FIELD_DEFINITIONS.put(13, new String[]{"n", "4", "Local Transaction Date"});
         FIELD_DEFINITIONS.put(14, new String[]{"n", "4", "Expiration Date"});
+        FIELD_DEFINITIONS.put(15, new String[]{"n", "4", "Settlement date"});
+        FIELD_DEFINITIONS.put(16, new String[]{"n", "4", "Currency conversion date"});
+        FIELD_DEFINITIONS.put(17, new String[]{"n", "4", "Capture date"});
         FIELD_DEFINITIONS.put(18, new String[]{"n", "4", "Merchant Category Code"});
+        FIELD_DEFINITIONS.put(19, new String[]{"n", "3", "Acquiring institution (country code)"});
+        FIELD_DEFINITIONS.put(20, new String[]{"n", "3", "PAN extended (country code)"});
+        FIELD_DEFINITIONS.put(21, new String[]{"n", "3", "Forwarding institution (country code)"});
         FIELD_DEFINITIONS.put(22, new String[]{"n", "3", "POS Entry Mode"});
-        FIELD_DEFINITIONS.put(25, new String[]{"n", "2", "POS Condition Code"});
+        FIELD_DEFINITIONS.put(23, new String[]{"n", "3", "Application PAN sequence number"});
+        FIELD_DEFINITIONS.put(24, new String[]{"n", "3", "Function code"});
+        FIELD_DEFINITIONS.put(25, new String[]{"n", "2", "POS condition code"});
+        FIELD_DEFINITIONS.put(26, new String[]{"n", "2", "POS capture code"});
+        FIELD_DEFINITIONS.put(27, new String[]{"n", "1", "Authorizing identification response length"});
         FIELD_DEFINITIONS.put(32, new String[]{"LLVAR", "11", "Acquiring Institution Code"});
+        FIELD_DEFINITIONS.put(33, new String[]{"LLVAR", "11", "Forwarding institution identification code"});
+        FIELD_DEFINITIONS.put(34, new String[]{"LLVAR", "28", "Primary account number, extended"});
         FIELD_DEFINITIONS.put(35, new String[]{"LLVAR", "37", "Track 2 Data"});
+        FIELD_DEFINITIONS.put(36, new String[]{"LLLVAR", "104", "Track 3 data"});
         FIELD_DEFINITIONS.put(37, new String[]{"an", "12", "Retrieval Reference Number"});
         FIELD_DEFINITIONS.put(38, new String[]{"an", "6", "Authorization Code"});
         FIELD_DEFINITIONS.put(39, new String[]{"an", "2", "Response Code"});
+        FIELD_DEFINITIONS.put(40, new String[]{"an", "3", "Service restriction code"});
         FIELD_DEFINITIONS.put(41, new String[]{"ans", "8", "Terminal ID"});
-        FIELD_DEFINITIONS.put(42, new String[]{"ans", "15", "Merchant ID"});
+        FIELD_DEFINITIONS.put(42, new String[]{"ans", "15", "Card acceptor identification code"});
         FIELD_DEFINITIONS.put(43, new String[]{"ans", "40", "Card Acceptor Name/Location"});
-        FIELD_DEFINITIONS.put(49, new String[]{"n", "3", "Currency Code"});
-        FIELD_DEFINITIONS.put(54, new String[]{"LLLVAR", "255", "Additional Amounts"});
+        FIELD_DEFINITIONS.put(44, new String[]{"LLVAR", "25", "Additional response data"});
+        FIELD_DEFINITIONS.put(45, new String[]{"LLVAR", "76", "Track 1 data"});
+        FIELD_DEFINITIONS.put(46, new String[]{"LLLVAR", "999", "Additional data (ISO)"});
+        FIELD_DEFINITIONS.put(47, new String[]{"LLLVAR", "999", "Additional data (national)"});
+        FIELD_DEFINITIONS.put(48, new String[]{"LLLVAR", "999", "Additional data (private)"});
+        FIELD_DEFINITIONS.put(49, new String[]{"n", "3", "Currency code, transaction"});
+        FIELD_DEFINITIONS.put(50, new String[]{"n", "3", "Currency code, settlement"});
+        FIELD_DEFINITIONS.put(51, new String[]{"n", "3", "Currency code, cardholder billing"});
+        FIELD_DEFINITIONS.put(53, new String[]{"n", "16", "Security related control information"});
+        FIELD_DEFINITIONS.put(54, new String[]{"LLLVAR", "120", "Additional amounts"});
         FIELD_DEFINITIONS.put(55, new String[]{"LLLVAR", "999", "ICC Data"});
+        FIELD_DEFINITIONS.put(60, new String[]{"LLLVAR", "999", "Reserved (national)"});
+        FIELD_DEFINITIONS.put(61, new String[]{"LLLVAR", "999", "Reserved (private)"});
+        FIELD_DEFINITIONS.put(62, new String[]{"LLLVAR", "999", "Reserved (private)"});
+        FIELD_DEFINITIONS.put(63, new String[]{"LLLVAR", "999", "Reserved (private)"});
     }
     
     /**
@@ -149,19 +179,19 @@ public class ISO8583Parser {
     private String parseField(String hexMessage, int startPos, String fieldType, int maxLength) {
         try {
             if (fieldType.equals("LLVAR")) {
-                // LLVAR: 2-hex-digit length + data (length is in BCD format)
+                // LLVAR: 2-digit length in DECIMAL + data
                 if (startPos + 2 > hexMessage.length()) {
                     return "ERROR - Insufficient data for LLVAR length";
                 }
                 
-                String lengthHex = hexMessage.substring(startPos, startPos + 2);
+                String lengthStr = hexMessage.substring(startPos, startPos + 2);
                 int dataLength;
                 
                 try {
-                    // Try parsing length as BCD (each hex digit represents decimal)
-                    dataLength = Integer.parseInt(lengthHex, 16); // Parse hex to get actual length
+                    // Parse length as decimal (as per specification)
+                    dataLength = Integer.parseInt(lengthStr, 10);
                 } catch (NumberFormatException e) {
-                    return "ERROR - Invalid LLVAR length format: " + lengthHex;
+                    return "ERROR - Invalid LLVAR length format: " + lengthStr;
                 }
                 
                 if (startPos + 2 + dataLength > hexMessage.length()) {
@@ -171,18 +201,18 @@ public class ISO8583Parser {
                 return hexMessage.substring(startPos + 2, startPos + 2 + dataLength);
                 
             } else if (fieldType.equals("LLLVAR")) {
-                // LLLVAR: 3-hex-digit length + data
+                // LLLVAR: 3-digit length in DECIMAL + data
                 if (startPos + 3 > hexMessage.length()) {
                     return "ERROR - Insufficient data for LLLVAR length";
                 }
                 
-                String lengthHex = hexMessage.substring(startPos, startPos + 3);
+                String lengthStr = hexMessage.substring(startPos, startPos + 3);
                 int dataLength;
                 
                 try {
-                    dataLength = Integer.parseInt(lengthHex, 16);
+                    dataLength = Integer.parseInt(lengthStr, 10);
                 } catch (NumberFormatException e) {
-                    return "ERROR - Invalid LLLVAR length format: " + lengthHex;
+                    return "ERROR - Invalid LLLVAR length format: " + lengthStr;
                 }
                 
                 if (startPos + 3 + dataLength > hexMessage.length()) {
