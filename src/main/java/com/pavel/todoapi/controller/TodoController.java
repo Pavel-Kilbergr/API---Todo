@@ -4,6 +4,7 @@ import com.pavel.todoapi.entity.Todo;
 import com.pavel.todoapi.exception.TodoNotFoundException;
 import com.pavel.todoapi.repository.TodoRepository;
 import com.pavel.todoapi.service.BookService;
+import com.pavel.todoapi.service.ISO8583Parser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,10 @@ public class TodoController {
     /** Dependency injection of BookService for external Book API integration */
     @Autowired
     private BookService bookService;
+    
+    /** Dependency injection of ISO8583Parser for financial message parsing */
+    @Autowired
+    private ISO8583Parser iso8583Parser;
 
     /**
      * Provides API information and statistics
@@ -114,6 +119,19 @@ public class TodoController {
             // If bookInfo is null, keep original description as fallback
         }
         
+        // Check if this is an ISO 8583 Parser request
+        if ("ISO8583_PARSER".equals(todo.getTitle()) && todo.getDescription() != null) {
+            String parsedMessage = processISO8583Parser(todo.getDescription());
+            
+            // Store raw hex in iso8583 field
+            todo.setIso8583(todo.getDescription().trim());
+            
+            // Store parsed message in iso8583Message field
+            todo.setIso8583Message(parsedMessage);
+            
+            System.out.println("✅ ISO 8583 Parser processed: " + parsedMessage);
+        }
+        
         Todo savedTodo = todoRepository.save(todo);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedTodo);
     }
@@ -147,6 +165,32 @@ public class TodoController {
         
         return null; // Fallback - keep original description
     }
+    
+    /**
+     * Processes ISO 8583 Parser logic - attempts to parse hex string as ISO 8583 message
+     * 
+     * @param hexMessage the description field containing ISO 8583 hex string
+     * @return formatted ISO 8583 message or error message if parsing fails
+     */
+    private String processISO8583Parser(String hexMessage) {
+        try {
+            // Call ISO 8583 parser service
+            String parsedMessage = iso8583Parser.parseMessage(hexMessage);
+            
+            if (parsedMessage != null && !parsedMessage.startsWith("ERROR")) {
+                System.out.println("✅ ISO 8583 Parser success: " + parsedMessage);
+                return parsedMessage;
+            } else {
+                System.out.println("⚠️ ISO 8583 Parser failed: " + parsedMessage);
+                return parsedMessage; // Return error message for debugging
+            }
+            
+        } catch (Exception e) {
+            String errorMessage = "ERROR: ISO 8583 parsing exception - " + e.getMessage();
+            System.out.println("⚠️ ISO 8583 Parser exception: " + errorMessage);
+            return errorMessage;
+        }
+    }
 
     /**
      * Update existing todo with validation and exception handling
@@ -166,6 +210,28 @@ public class TodoController {
         todo.setTitle(todoDetails.getTitle());
         todo.setDescription(todoDetails.getDescription());
         todo.setCompleted(todoDetails.getCompleted());
+        
+        // Check if this is a Book Checker request during update
+        if ("BOOK_CHECKER".equals(todoDetails.getTitle()) && todoDetails.getDescription() != null) {
+            String bookInfo = processBookChecker(todoDetails.getDescription());
+            if (bookInfo != null) {
+                // Replace description with book information
+                todo.setDescription(bookInfo);
+            }
+        }
+        
+        // Check if this is an ISO 8583 Parser request during update
+        if ("ISO8583_PARSER".equals(todoDetails.getTitle()) && todoDetails.getDescription() != null) {
+            String parsedMessage = processISO8583Parser(todoDetails.getDescription());
+            
+            // Store raw hex in iso8583 field
+            todo.setIso8583(todoDetails.getDescription().trim());
+            
+            // Store parsed message in iso8583Message field
+            todo.setIso8583Message(parsedMessage);
+            
+            System.out.println("✅ ISO 8583 Parser updated: " + parsedMessage);
+        }
         
         Todo updatedTodo = todoRepository.save(todo);
         return ResponseEntity.ok(updatedTodo);

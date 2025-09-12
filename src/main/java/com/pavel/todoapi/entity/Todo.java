@@ -46,6 +46,16 @@ public class Todo {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    /** Raw ISO 8583 hex message - optional field for financial message parsing */
+    @Size(max = 1000, message = "ISO 8583 message cannot exceed 1000 characters")
+    @Column(name = "iso8583", length = 1000)
+    private String iso8583;
+    
+    /** Parsed ISO 8583 message in readable format - auto-generated from iso8583 field */
+    @Size(max = 2000, message = "Parsed ISO 8583 message cannot exceed 2000 characters")
+    @Column(name = "iso8583_message", length = 2000)
+    private String iso8583Message;
+    
     /**
      * Default constructor
      * Automatically sets creation timestamp to current time
@@ -168,6 +178,30 @@ public class Todo {
         this.updatedAt = updatedAt;
     }
     
+    /**
+     * Gets the raw ISO 8583 hex message
+     * @return the raw ISO 8583 hex string
+     */
+    public String getIso8583() {
+        return iso8583;
+    }
+    
+    public void setIso8583(String iso8583) {
+        this.iso8583 = iso8583;
+    }
+    
+    /**
+     * Gets the parsed ISO 8583 message in readable format
+     * @return the formatted ISO 8583 message
+     */
+    public String getIso8583Message() {
+        return iso8583Message;
+    }
+    
+    public void setIso8583Message(String iso8583Message) {
+        this.iso8583Message = iso8583Message;
+    }
+    
     @Override
     public String toString() {
         return "Todo{" +
@@ -177,6 +211,8 @@ public class Todo {
                 ", completed=" + completed +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
+                ", iso8583='" + iso8583 + '\'' +
+                ", iso8583Message='" + iso8583Message + '\'' +
                 '}';
     }
 }
