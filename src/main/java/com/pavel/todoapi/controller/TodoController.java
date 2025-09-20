@@ -290,6 +290,24 @@ public class TodoController {
         todo.setDescription(todoDetails.getDescription());
         todo.setCompleted(todoDetails.getCompleted());
         
+        // Update ISO fields if provided
+        if (todoDetails.getIso8583() != null) {
+            todo.setIso8583(todoDetails.getIso8583());
+        }
+        if (todoDetails.getIso8583Message() != null) {
+            todo.setIso8583Message(todoDetails.getIso8583Message());
+        }
+        
+        // Auto-detect and parse ISO 8583 if iso8583 field is manually set
+        if (todoDetails.getIso8583() != null && !todoDetails.getIso8583().trim().isEmpty()) {
+            String hexMessage = todoDetails.getIso8583().trim();
+            if (isISO8583HexMessage(hexMessage)) {
+                String parsedMessage = processISO8583Parser(hexMessage);
+                todo.setIso8583Message(parsedMessage);
+                System.out.println("🔄 Auto-parsed ISO 8583 from iso8583 field: " + parsedMessage);
+            }
+        }
+        
         // Check if this is a Book Checker request during update
         if ("BOOK_CHECKER".equals(todoDetails.getTitle()) && todoDetails.getDescription() != null) {
             String bookInfo = processBookChecker(todoDetails.getDescription());
@@ -300,7 +318,7 @@ public class TodoController {
         }
         
         // Check if this is an ISO 8583 Parser request during update
-        if ("ISO8583_PARSER".equals(todoDetails.getTitle()) && todoDetails.getDescription() != null) {
+        else if ("ISO8583_PARSER".equals(todoDetails.getTitle()) && todoDetails.getDescription() != null) {
             String parsedMessage = processISO8583Parser(todoDetails.getDescription());
             
             // Store raw hex in iso8583 field
@@ -310,6 +328,21 @@ public class TodoController {
             todo.setIso8583Message(parsedMessage);
             
             System.out.println("✅ ISO 8583 Parser updated: " + parsedMessage);
+        }
+        
+        // Auto-detect ISO 8583 message in title or description during update
+        else if (isISO8583HexMessage(todoDetails.getTitle()) || isISO8583HexMessage(todoDetails.getDescription())) {
+            String hexMessage = isISO8583HexMessage(todoDetails.getTitle()) ? todoDetails.getTitle() : todoDetails.getDescription();
+            
+            String parsedMessage = processISO8583Parser(hexMessage);
+            
+            // Auto-set title and organize data
+            todo.setTitle("ISO8583_PARSER");
+            todo.setDescription("Auto-detected ISO 8583 message during update");
+            todo.setIso8583(hexMessage.trim());
+            todo.setIso8583Message(parsedMessage);
+            
+            System.out.println("🔄 Auto-detected ISO 8583 message during update: " + parsedMessage);
         }
         
         Todo updatedTodo = todoRepository.save(todo);
