@@ -236,6 +236,13 @@ public class ISO8583Parser {
                     return "ERROR - Insufficient data for ans field";
                 }
                 return hexMessage.substring(startPos, startPos + hexLength);
+            } else if (fieldType.equals("an")) {
+                // Fixed alphanumeric field - each character = 1 hex digit for simplicity
+                int hexLength = maxLength; 
+                if (startPos + hexLength > hexMessage.length()) {
+                    return "ERROR - Insufficient data for an field";
+                }
+                return hexMessage.substring(startPos, startPos + hexLength);
             }
             
             return "ERROR - Unknown field type: " + fieldType;
